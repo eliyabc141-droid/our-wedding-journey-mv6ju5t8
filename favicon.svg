@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2B774"/>
+      <stop offset="50%" stop-color="#C59B51"/>
+      <stop offset="100%" stop-color="#8E6A2B"/>
+    </linearGradient>
+    <linearGradient id="rose" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF758C"/>
+      <stop offset="100%" stop-color="#FF7EB3"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="46" fill="#FFF9F6" stroke="url(#gold)" stroke-width="3"/>
+  <!-- Two intertwined wedding rings with heart accent -->
+  <circle cx="41" cy="53" r="21" fill="none" stroke="url(#gold)" stroke-width="5"/>
+  <circle cx="59" cy="53" r="21" fill="none" stroke="url(#gold)" stroke-width="5"/>
+  <!-- Diamond gem on top -->
+  <polygon points="50,22 57,32 50,42 43,32" fill="#E2B774"/>
+  <path d="M50 43 C 48 38, 42 36, 38 41 C 34 47, 44 54, 50 60 C 56 54, 66 47, 62 41 C 58 36, 52 38, 50 43 Z" fill="url(#rose)" opacity="0.9"/>
+</svg>

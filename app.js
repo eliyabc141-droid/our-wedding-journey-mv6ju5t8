@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  // --- IndexedDB for Memories Photos (Supports larger image files safely) ---
+  // --- IndexedDB for Memories Photos ---
   const DB_NAME = 'WeddingAppDB';
   const DB_VERSION = 1;
   const STORE_MEMORIES = 'memories';
@@ -71,11 +71,102 @@
     }
   }
 
+  // --- PASSCODE / AUTHENTICATION LOGIC ---
+  const DEFAULT_PASSCODE = '1234';
+
+  function getPasscode() {
+    return localStorage.getItem('wedding_passcode') || DEFAULT_PASSCODE;
+  }
+
+  function setPasscode(newCode) {
+    localStorage.setItem('wedding_passcode', newCode);
+  }
+
+  function checkAuthentication() {
+    const isAuth = sessionStorage.getItem('wedding_authenticated') === 'true';
+    if (isAuth) {
+      loginOverlay.classList.add('hidden');
+    } else {
+      loginOverlay.classList.remove('hidden');
+      setTimeout(() => {
+        if (passcodeInput) passcodeInput.focus();
+      }, 150);
+    }
+  }
+
+  function setupPasscodeGate() {
+    checkAuthentication();
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const entered = passcodeInput.value.trim();
+      const correct = getPasscode();
+
+      if (entered === correct) {
+        sessionStorage.setItem('wedding_authenticated', 'true');
+        loginOverlay.classList.add('hidden');
+        loginErrorMsg.classList.add('hidden');
+        passcodeInput.value = '';
+        showToast('ברוכים הבאים! ✨');
+      } else {
+        loginErrorMsg.classList.remove('hidden');
+        const card = document.querySelector('.login-card');
+        if (card) {
+          card.classList.remove('shake');
+          void card.offsetWidth; // force reflow
+          card.classList.add('shake');
+        }
+      }
+    });
+
+    if (togglePassVisibilityBtn) {
+      togglePassVisibilityBtn.addEventListener('click', () => {
+        const isPass = passcodeInput.type === 'password';
+        passcodeInput.type = isPass ? 'text' : 'password';
+        togglePassVisibilityBtn.querySelector('i').className = isPass ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+      });
+    }
+
+    if (lockAppBtn) {
+      lockAppBtn.addEventListener('click', () => {
+        sessionStorage.removeItem('wedding_authenticated');
+        checkAuthentication();
+        showToast('האפליקציה ננעלה 🔒');
+      });
+    }
+  }
+
+  // --- DATA RESET LOGIC ---
+  async function resetAllData() {
+    if (!confirm('האם אתם בטוחים לחלוטין שברצונכם לאפס את כל נתוני האתר?\nפעולה זו תמחק את כל האירועים, הזכרונות, ההודעות וההגדרות ולא ניתן לבטלה!')) {
+      return;
+    }
+
+    try {
+      const db = await dbPromise;
+      if (db) db.close();
+    } catch (e) {
+      console.warn('IDB close warning:', e);
+    }
+
+    const deleteReq = indexedDB.deleteDatabase(DB_NAME);
+    const finishReset = () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      alert('כל נתוני האתר אופסו בהצלחה!');
+      location.reload();
+    };
+
+    deleteReq.onsuccess = finishReset;
+    deleteReq.onerror = finishReset;
+    deleteReq.onblocked = finishReset;
+  }
+
   // --- Default Couple Settings ---
   const defaultSettings = {
     groom: 'עומר',
     bride: 'נועה',
-    weddingDate: getFutureDateString(120), // approx 4 months ahead
+    weddingDate: getFutureDateString(120),
     weddingTime: '19:30',
     venue: 'אולמי האחוזה, מודיעין'
   };
@@ -86,7 +177,6 @@
     return d.toISOString().split('T')[0];
   }
 
-  // Load Settings
   let settings = Object.assign({}, defaultSettings, JSON.parse(localStorage.getItem('wedding_settings') || '{}'));
 
   // Default romantic quotes
@@ -175,7 +265,7 @@
 
   let chatMessages = JSON.parse(localStorage.getItem('wedding_chat') || JSON.stringify(defaultChat));
 
-  // --- Initial Memory seed if empty ---
+  // Seed memory initial
   async function seedInitialMemoriesIfEmpty() {
     const existing = await idbGetAllMemories();
     if (existing.length === 0) {
@@ -204,18 +294,23 @@
       <circle cx="300" cy="220" r="70" fill="#fff5eb" opacity="0.85"/>
       <path d="M0 320 Q 200 280, 400 330 T 600 310 L 600 400 L 0 400 Z" fill="#2d1b2d" opacity="0.8"/>
       <path d="M0 350 Q 300 320, 600 360 L 600 400 L 0 400 Z" fill="#170c17"/>
-      <!-- Silhouettes of couple -->
       <circle cx="280" cy="265" r="9" fill="#170c17"/>
       <path d="M272 278 Q 280 274, 288 278 L 290 320 L 270 320 Z" fill="#170c17"/>
       <circle cx="302" cy="268" r="8.5" fill="#170c17"/>
       <path d="M294 280 Q 302 275, 310 280 L 316 320 L 292 320 Z" fill="#170c17"/>
-      <!-- Glowing ring heart -->
       <text x="300" y="140" font-size="44" text-anchor="middle" fill="#ffffff" opacity="0.95">💍❤️</text>
     </svg>`;
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
   }
 
-  // --- DOM Elements ---
+  // DOM Elements
+  const loginOverlay = document.getElementById('loginOverlay');
+  const loginForm = document.getElementById('loginForm');
+  const passcodeInput = document.getElementById('passcodeInput');
+  const togglePassVisibilityBtn = document.getElementById('togglePassVisibilityBtn');
+  const loginErrorMsg = document.getElementById('loginErrorMsg');
+  const lockAppBtn = document.getElementById('lockAppBtn');
+
   const coupleNamesDisplay = document.getElementById('coupleNamesDisplay');
   const weddingDateDisplay = document.getElementById('weddingDateDisplay');
   const cdDays = document.getElementById('cdDays');
@@ -232,11 +327,9 @@
   const eventsBadge = document.getElementById('eventsBadge');
   const memoriesBadge = document.getElementById('memoriesBadge');
 
-  // Navigation
   const navBtns = document.querySelectorAll('.nav-btn');
   const tabPanels = document.querySelectorAll('.tab-panel');
 
-  // Events Elements
   const eventsContainer = document.getElementById('eventsContainer');
   const openAddEventBtn = document.getElementById('openAddEventBtn');
   const eventModal = document.getElementById('eventModal');
@@ -245,7 +338,6 @@
   const filterChips = document.querySelectorAll('.chip');
   let currentEventFilter = 'all';
 
-  // Memories Elements
   const memoriesGrid = document.getElementById('memoriesGrid');
   const openAddMemoryBtn = document.getElementById('openAddMemoryBtn');
   const memoryModal = document.getElementById('memoryModal');
@@ -262,14 +354,12 @@
   let activeViewingMemoryId = null;
   let stagedMemoryBase64 = null;
 
-  // Chat Elements
   const currentSenderSelect = document.getElementById('currentSenderSelect');
   const chatMessagesContainer = document.getElementById('chatMessages');
   const chatForm = document.getElementById('chatForm');
   const chatInput = document.getElementById('chatInput');
   const quickEmojiBtns = document.querySelectorAll('.quick-emoji-btn');
 
-  // Settings Elements
   const openSettingsBtn = document.getElementById('openSettingsBtn');
   const settingsModal = document.getElementById('settingsModal');
   const settingsForm = document.getElementById('settingsForm');
@@ -278,11 +368,14 @@
   const weddingDateInput = document.getElementById('weddingDateInput');
   const weddingTimeInput = document.getElementById('weddingTimeInput');
   const venueNameInput = document.getElementById('venueNameInput');
+  const settingsPasscodeInput = document.getElementById('settingsPasscodeInput');
+  const resetDataBtn = document.getElementById('resetDataBtn');
 
   const toastNotification = document.getElementById('toastNotification');
 
-  // --- INITIALIZATION ---
+  // INITIALIZATION
   function init() {
+    setupPasscodeGate();
     updateHeaderInfo();
     setupCountdown();
     setupQuote();
@@ -294,7 +387,7 @@
     seedInitialMemoriesIfEmpty();
   }
 
-  // --- NAVIGATION ---
+  // NAVIGATION
   function setupNav() {
     navBtns.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -306,7 +399,6 @@
         const activePanel = document.getElementById(targetTab);
         if (activePanel) activePanel.classList.add('active');
 
-        // If chat opened, scroll to bottom
         if (targetTab === 'tab-chat') {
           setTimeout(scrollChatToBottom, 100);
         }
@@ -314,7 +406,7 @@
     });
   }
 
-  // --- TOAST HELPER ---
+  // TOAST HELPER
   let toastTimer = null;
   function showToast(msg) {
     if (toastTimer) clearTimeout(toastTimer);
@@ -325,14 +417,13 @@
     }, 3000);
   }
 
-  // --- HEADER & SETTINGS ---
+  // HEADER & SETTINGS
   function updateHeaderInfo() {
     coupleNamesDisplay.textContent = `${settings.groom} & ${settings.bride}`;
     const d = new Date(settings.weddingDate + 'T' + (settings.weddingTime || '19:30'));
     const formattedDate = !isNaN(d) ? d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' }) : settings.weddingDate;
     weddingDateDisplay.textContent = `${formattedDate} • ${settings.venue || 'האולם שלנו'}`;
 
-    // Update sender dropdown labels in chat
     if (currentSenderSelect) {
       currentSenderSelect.options[0].textContent = `${settings.groom} (החתן)`;
       currentSenderSelect.options[1].textContent = `${settings.bride} (הכלה)`;
@@ -345,6 +436,7 @@
     weddingDateInput.value = settings.weddingDate;
     weddingTimeInput.value = settings.weddingTime || '19:30';
     venueNameInput.value = settings.venue || '';
+    settingsPasscodeInput.value = getPasscode();
     settingsModal.classList.remove('hidden');
   });
 
@@ -356,14 +448,23 @@
     settings.weddingTime = weddingTimeInput.value || '19:30';
     settings.venue = venueNameInput.value.trim();
 
+    const newPass = settingsPasscodeInput.value.trim();
+    if (newPass) {
+      setPasscode(newPass);
+    }
+
     localStorage.setItem('wedding_settings', JSON.stringify(settings));
     updateHeaderInfo();
     updateCountdown();
     settingsModal.classList.add('hidden');
-    showToast('ההגדרות עודכנו בהצלחה! 💖');
+    showToast('ההגדרות והסיסמה עודכנו בהצלחה! 💖');
   });
 
-  // --- COUNTDOWN TIMER ---
+  if (resetDataBtn) {
+    resetDataBtn.addEventListener('click', resetAllData);
+  }
+
+  // COUNTDOWN TIMER
   let countdownInterval = null;
 
   function updateCountdown() {
@@ -399,12 +500,10 @@
     if (countdownInterval) clearInterval(countdownInterval);
     countdownInterval = setInterval(updateCountdown, 1000);
 
-    // Confetti button
     if (confettiBtn) {
       confettiBtn.addEventListener('click', fireConfetti);
     }
 
-    // Love Burst Button
     if (loveBurstBtn) {
       loveBurstBtn.addEventListener('click', () => {
         fireConfetti();
@@ -424,7 +523,7 @@
     }
   }
 
-  // --- ROMANTIC QUOTES ---
+  // ROMANTIC QUOTES
   function setupQuote() {
     setRandomQuote();
     newQuoteBtn.addEventListener('click', setRandomQuote);
@@ -435,14 +534,13 @@
     dailyLoveQuote.textContent = quotes[randomIdx];
   }
 
-  // --- EVENTS / CALENDAR LOGIC ---
+  // EVENTS / CALENDAR LOGIC
   function renderEvents() {
     const sorted = [...events].sort((a, b) => new Date(a.date + 'T' + (a.time || '00:00')) - new Date(b.date + 'T' + (b.time || '00:00')));
 
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
 
-    // Filter
     let filtered = sorted;
     if (currentEventFilter === 'upcoming') {
       filtered = sorted.filter(ev => ev.date >= todayStr);
@@ -452,7 +550,6 @@
 
     eventsBadge.textContent = sorted.filter(ev => ev.date >= todayStr).length;
 
-    // Update quick countdown widget
     const nextEvent = sorted.find(ev => ev.date >= todayStr);
     if (nextEvent) {
       const d = new Date(nextEvent.date);
@@ -515,7 +612,6 @@
       `;
     }).join('');
 
-    // Attach event listeners for edit / delete
     eventsContainer.querySelectorAll('.delete-event-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -539,7 +635,6 @@
     });
   }
 
-  // Filter chips click
   filterChips.forEach(chip => {
     chip.addEventListener('click', () => {
       filterChips.forEach(c => c.classList.remove('active'));
@@ -549,7 +644,6 @@
     });
   });
 
-  // Open Event Modal
   openAddEventBtn.addEventListener('click', () => {
     eventForm.reset();
     document.getElementById('eventId').value = '';
@@ -597,13 +691,12 @@
     renderEvents();
   });
 
-  // --- MEMORIES / GALLERY LOGIC ---
+  // MEMORIES / GALLERY LOGIC
   async function renderMemories() {
     const list = await idbGetAllMemories();
     memoriesBadge.textContent = list.length;
     memoriesCountText.textContent = `${list.length} תמונות`;
 
-    // Sort by date descending
     list.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     if (list.length === 0) {
@@ -611,7 +704,7 @@
         <div class="empty-state" style="grid-column: 1 / -1;">
           <i class="fa-regular fa-images"></i>
           <h3>עדיין לא הוספתם זכרונות</h3>
-          <p>לחצו על "הוספת זי
+          <p>לחצו על "הוספת זיכרון" כדי להעלות תמונות מרגשות!</p>
         </div>
       `;
       return;
@@ -635,7 +728,6 @@
       `;
     }).join('');
 
-    // Attach click to open lightbox
     memoriesGrid.querySelectorAll('.memory-card').forEach(card => {
       card.addEventListener('click', async () => {
         const id = card.getAttribute('data-id');
@@ -665,7 +757,6 @@
     }
   });
 
-  // Add Memory Modal logic
   openAddMemoryBtn.addEventListener('click', () => {
     memoryForm.reset();
     stagedMemoryBase64 = null;
@@ -676,7 +767,6 @@
     memoryModal.classList.remove('hidden');
   });
 
-  // Image compression & preview
   memoryImageInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -685,7 +775,6 @@
     reader.onload = function (event) {
       const img = new Image();
       img.onload = function () {
-        // Resize image to max 1200px width/height to save space and ensure high performance
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
@@ -748,9 +837,9 @@
     showToast('הזיכרון נוסף לאלבום האהבה שלכם! 📸💖');
   });
 
-  // --- CHAT LOGIC ---
+  // CHAT LOGIC
   function renderChat() {
-    const myCurrentSender = currentSenderSelect.value; // 'groom' or 'bride'
+    const myCurrentSender = currentSenderSelect.value;
 
     chatMessagesContainer.innerHTML = chatMessages.map((msg, idx) => {
       const isMine = msg.sender === myCurrentSender;
@@ -772,7 +861,6 @@
       `;
     }).join('');
 
-    // Attach reaction listeners
     chatMessagesContainer.querySelectorAll('.bubble-react-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const idx = parseInt(btn.getAttribute('data-idx'), 10);
@@ -817,7 +905,6 @@
     chatInput.value = '';
   });
 
-  // Quick emoji buttons
   quickEmojiBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const emojiText = btn.getAttribute('data-emoji');
@@ -842,7 +929,7 @@
     renderChat();
   }
 
-  // --- MODAL CONTROLS ---
+  // MODAL CONTROLS
   function setupModals() {
     document.querySelectorAll('[data-close]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -852,7 +939,6 @@
       });
     });
 
-    // Close when clicking overlay backdrop
     [eventModal, memoryModal, viewMemoryModal, settingsModal].forEach(modal => {
       modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.classList.add('hidden');
@@ -860,7 +946,6 @@
     });
   }
 
-  // --- SECURITY / HTML ESCAPE ---
   function escapeHtml(str) {
     if (!str) return '';
     return str

@@ -7,7 +7,7 @@
   <title>החתונה שלנו • ספירה לאחור, יומן, זכרונות וצ'אט</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
-  <!-- Google Fonts: Assistant & Playfair Display for numbers -->
+  <!-- Google Fonts: Assistant & Playfair Display -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
@@ -18,6 +18,31 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+  <!-- LOGIN / PASSCODE OVERLAY GATE -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-icon-ring"><i class="fa-solid fa-lock"></i></div>
+        <h2 class="login-title">אזור אישי לזוג</h2>
+        <p class="login-sub">נא להזין סיסמה כדי להיכנס לאפליקציית החתונה</p>
+      </div>
+      <form id="loginForm" class="login-form">
+        <div class="pass-input-wrap">
+          <input type="password" id="passcodeInput" placeholder="הזינו סיסמה..." autocomplete="current-password" required>
+          <button type="button" id="togglePassVisibilityBtn" class="pass-toggle-btn" title="הצג/הסתר סיסמה">
+            <i class="fa-regular fa-eye"></i>
+          </button>
+        </div>
+        <p id="loginErrorMsg" class="login-error hidden">סיסמה שגויה, נסו שוב</p>
+        <button type="submit" class="primary-btn login-submit-btn">
+          <i class="fa-solid fa-key"></i> כניסה לאפליקציה
+        </button>
+        <p class="login-hint"><i class="fa-solid fa-circle-info"></i> סיסמת ברירת המחדל הראשונית: <strong>1234</strong> (ניתנת לשינוי בהגדרות)</p>
+      </form>
+    </div>
+  </div>
+
   <!-- Header / Couple Banner -->
   <header class="app-header">
     <div class="header-inner">
@@ -28,9 +53,14 @@
           <p id="weddingDateDisplay" class="sub-date">מתחתנים בקרוב</p>
         </div>
       </div>
-      <button class="settings-btn" id="openSettingsBtn" title="הגדרות החתונה" aria-label="הגדרות">
-        <i class="fa-solid fa-gear"></i>
-      </button>
+      <div class="header-actions">
+        <button class="settings-btn" id="lockAppBtn" title="נעילת אפליקציה" aria-label="נעילה">
+          <i class="fa-solid fa-lock"></i>
+        </button>
+        <button class="settings-btn" id="openSettingsBtn" title="הגדרות החתונה" aria-label="הגדרות">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -164,7 +194,7 @@
       <div class="section-header">
         <div>
           <h2 class="section-title">ספר הזכרונות שלנו</h2>
-          <p classים שאסור לשכוח</p>
+          <p class="section-sub">תמונות ורגעים שאסור לשכוח</p>
         </div>
         <button class="primary-btn" id="openAddMemoryBtn">
           <i class="fa-solid fa-cloud-arrow-up"></i> הוספת זיכרון
@@ -351,7 +381,7 @@
   <div id="settingsModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>הגדרות החתונה והשמות</h3>
+        <h3>הגדרות החתונה והאפליקציה</h3>
         <button class="close-modal-btn" data-close="settingsModal"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form id="settingsForm" class="modal-form">
@@ -380,6 +410,20 @@
         <div class="form-group">
           <label for="venueNameInput">שם האולם / גן האירועים</label>
           <input type="text" id="venueNameInput" placeholder="לדוגמה: גן החלומות, קיסריה">
+        </div>
+
+        <div class="form-group">
+          <label for="settingsPasscodeInput"><i class="fa-solid fa-lock"></i> סיסמת כניסה לאפליקציה</label>
+          <input type="text" id="settingsPasscodeInput" placeholder="ברירת מחדל: 1234">
+          <small class="field-hint">סיסמה זו משמשת לנעילת האפליקציה מפני אורחים</small>
+        </div>
+
+        <div class="danger-zone">
+          <h4><i class="fa-solid fa-triangle-exclamation"></i> אזור איפוס נתונים</h4>
+          <p>איפוס מוחלט של כל הנתונים השמורים (אירועים, זכרונות, הודעות והגדרות)</p>
+          <button type="button" id="resetDataBtn" class="danger-btn">
+            <i class="fa-solid fa-rotate"></i> איפוס נתוני האתר
+          </button>
         </div>
 
         <div class="modal-actions">

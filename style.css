@@ -467,31 +467,89 @@ body {
   color: #27672b;
 }
 
+/* Quote Card & Editable Area */
 .quote-card {
   background: #ffffff;
   border-radius: var(--radius-md);
   border: 1px dashed var(--border-color);
-  padding: 18px 22px;
-  max-width: 620px;
+  padding: 20px 22px;
+  max-width: 650px;
   margin: 0 auto 26px auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   position: relative;
+  box-shadow: 0 4px 12px rgba(197, 155, 81, 0.05);
 }
 
 .quote-icon {
   color: var(--primary-gold);
   font-size: 1.4rem;
-  opacity: 0.7;
+  opacity: 0.75;
+}
+
+.quote-display-area {
+  width: 100%;
 }
 
 .quote-text {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-style: italic;
   color: #4b3e39;
   font-weight: 600;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.quote-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.quote-edit-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: fadeIn 0.2s ease;
+}
+
+.quote-edit-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--primary-gold);
+  text-align: right;
+}
+
+.quote-edit-box textarea {
+  width: 100%;
+  border: 1.5px solid var(--primary-gold);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-dark);
+  outline: none;
+  background: #fffdf9;
+  resize: vertical;
+  min-height: 60px;
+  box-shadow: 0 0 0 3px rgba(197, 155, 81, 0.12);
+}
+
+.quote-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.small-btn {
+  padding: 6px 16px !important;
+  font-size: 0.85rem !important;
 }
 
 .text-btn {
@@ -504,12 +562,14 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border-radius: var(--radius-pill);
+  transition: var(--transition);
 }
 
 .text-btn:hover {
   background: var(--gold-light);
+  color: #8c6721;
 }
 
 .summary-cards {
@@ -569,22 +629,26 @@ body {
   background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
   color: white;
   border: none;
-  padding: 12px 26px;
+  padding: 14px 30px;
   border-radius: var(--radius-pill);
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(255, 117, 140, 0.35);
+  box-shadow: 0 6px 20px rgba(255, 117, 140, 0.4);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   transition: var(--transition);
 }
 
 .celebrate-btn:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 24px rgba(255, 117, 140, 0.45);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 10px 28px rgba(255, 117, 140, 0.5);
+}
+
+.celebrate-btn:active {
+  transform: translateY(0) scale(0.98);
 }
 
 /* ============================================================

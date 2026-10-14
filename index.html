@@ -126,11 +126,36 @@
           <button id="confettiBtn" class="primary-btn pulse"><i class="fa-solid fa-champagne-glasses"></i> להרים כוסית וקונפטי!</button>
         </div>
 
-        <!-- Romantic Quote Card -->
+        <!-- Romantic Quote Card (Editable) -->
         <div class="quote-card">
           <i class="fa-solid fa-quote-right quote-icon"></i>
-          <p id="dailyLoveQuote" class="quote-text">"מצאתי את שאהבה נפשי..."</p>
-          <button id="newQuoteBtn" class="text-btn"><i class="fa-solid fa-shuffle"></i> משפט חדש</button>
+          
+          <div id="quoteDisplayArea" class="quote-display-area">
+            <p id="dailyLoveQuote" class="quote-text">"מצאתי את שאהבה נפשי..."</p>
+          </div>
+
+          <!-- Edit Quote Form Box -->
+          <div id="quoteEditContainer" class="quote-edit-box hidden">
+            <label for="quoteEditText" class="quote-edit-label">עריכת המשפט הרומנטי שלכם:</label>
+            <textarea id="quoteEditText" rows="2" placeholder="כתבו כאן משפט אהבה או ציטוט מיוחד שילווה אתכם..."></textarea>
+            <div class="quote-edit-actions">
+              <button type="button" id="saveQuoteBtn" class="primary-btn small-btn">
+                <i class="fa-solid fa-check"></i> שמירת משפט
+              </button>
+              <button type="button" id="cancelQuoteBtn" class="cancel-btn small-btn">
+                ביטול
+              </button>
+            </div>
+          </div>
+
+          <div id="quoteActionsRow" class="quote-actions">
+            <button id="editQuoteBtn" class="text-btn" title="עריכת המשפט">
+              <i class="fa-regular fa-pen-to-square"></i> עריכת משפט
+            </button>
+            <button id="newQuoteBtn" class="text-btn" title="החלפת משפט מתוך המאגר">
+              <i class="fa-solid fa-shuffle"></i> משפט אקראי
+            </button>
+          </div>
         </div>
 
         <!-- Quick Summary Widgets -->
@@ -152,7 +177,7 @@
         </div>
 
         <div class="celebrate-row">
-          <button class="celebrate-btn" id="loveBurstBtn">
+          <button class="celebrate-btn" id="loveBurstBtn" title="שולח גל אהבה ומשגר הודעה ישירות לצ'אט">
             <i class="fa-solid fa-heart"></i> שלח/י חיבוק ונשיקה עכשיו!
           </button>
         </div>

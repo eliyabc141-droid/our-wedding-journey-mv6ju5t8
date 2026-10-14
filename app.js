@@ -181,13 +181,15 @@
 
   // Default romantic quotes
   const quotes = [
-    '״מים רבים לא יוכלו לכבות את האהבה ונהרות לא ישטפוה״',
-    '״מצאתי את שאהבה נפשי, אחזתיו ולא ארפנו״',
-    '״ואהבת עולם אהבתיך, על כן משכתיך חסד״',
-    '״טובים השניים מן האחד... כי אם ייפלו האחד יקים את חברו״',
-    '״כל ששון וכל שמחה, קול חתן וקול כלה״',
-    '״בכל יום אני בוחר/ת בך מחדש לעוד הרפתקה של חיים שלמים״',
-    '״הלב שלי ידע מהרגע הראשון שזה לתמיד״'
+    'מים רבים לא יוכלו לכבות את האהבה ונהרות לא ישטפוה',
+    'מצאתי את שאהבה נפשי, אחזתיו ולא ארפנו',
+    'ואהבת עולם אהבתיך, על כן משכתיך חסד',
+    'טובים השניים מן האחד... כי אם ייפלו האחד יקים את חברו',
+    'כל ששון וכל שמחה, קול חתן וקול כלה',
+    'בכל יום אני בוחר/ת בך מחדש לעוד הרפתקה של חיים שלמים',
+    'הלב שלי ידע מהרגע הראשון שזה לתמיד',
+    'לכל מקום שתלך/י - הלב שלי איתך',
+    'הסיפור היפה ביותר בחיי התחיל ברגע שהכרתי אותך'
   ];
 
   // Default Events
@@ -319,8 +321,18 @@
   const cdSeconds = document.getElementById('cdSeconds');
   const weddingPassedNotice = document.getElementById('weddingPassedNotice');
   const confettiBtn = document.getElementById('confettiBtn');
+  
+  // Quote Elements
   const dailyLoveQuote = document.getElementById('dailyLoveQuote');
   const newQuoteBtn = document.getElementById('newQuoteBtn');
+  const editQuoteBtn = document.getElementById('editQuoteBtn');
+  const quoteDisplayArea = document.getElementById('quoteDisplayArea');
+  const quoteEditContainer = document.getElementById('quoteEditContainer');
+  const quoteEditText = document.getElementById('quoteEditText');
+  const saveQuoteBtn = document.getElementById('saveQuoteBtn');
+  const cancelQuoteBtn = document.getElementById('cancelQuoteBtn');
+  const quoteActionsRow = document.getElementById('quoteActionsRow');
+
   const nextEventText = document.getElementById('nextEventText');
   const memoriesCountText = document.getElementById('memoriesCountText');
   const loveBurstBtn = document.getElementById('loveBurstBtn');
@@ -414,7 +426,7 @@
     toastNotification.classList.remove('hidden');
     toastTimer = setTimeout(() => {
       toastNotification.classList.add('hidden');
-    }, 3000);
+    }, 3200);
   }
 
   // HEADER & SETTINGS
@@ -456,6 +468,7 @@
     localStorage.setItem('wedding_settings', JSON.stringify(settings));
     updateHeaderInfo();
     updateCountdown();
+    renderChat();
     settingsModal.classList.add('hidden');
     showToast('ההגדרות והסיסמה עודכנו בהצלחה! 💖');
   });
@@ -464,7 +477,7 @@
     resetDataBtn.addEventListener('click', resetAllData);
   }
 
-  // COUNTDOWN TIMER
+  // COUNTDOWN TIMER & LOVE BURST
   let countdownInterval = null;
 
   function updateCountdown() {
@@ -504,10 +517,24 @@
       confettiBtn.addEventListener('click', fireConfetti);
     }
 
+    // "שלח/י חיבוק ונשיקה עכשיו!" - Also sends a real chat message
     if (loveBurstBtn) {
       loveBurstBtn.addEventListener('click', () => {
         fireConfetti();
-        showToast(`נשלח גל של אהבה ל${settings.bride} ול${settings.groom}! 🥰❤️`);
+        
+        const sender = currentSenderSelect ? currentSenderSelect.value : 'groom';
+        const senderName = sender === 'groom' ? settings.groom : settings.bride;
+        const receiverName = sender === 'groom' ? settings.bride : settings.groom;
+
+        const loveBurstMessages = [
+          `שולח/ת ל${receiverName} חיבוק ענק ונשיקה מתוקה מכל הלב! 🥰❤️💋`,
+          `מחשבה מתוקה על ${receiverName} שהציפה אותי באהבה... חיבוק ונשיקה עכשיו! 💖✨`,
+          `גל ענק של חיבוקים, נשיקות והתרגשות בדרך אלייך/אליך! 👰🤵💍❤️`
+        ];
+        const randomMsg = loveBurstMessages[Math.floor(Math.random() * loveBurstMessages.length)];
+
+        postChatMessage(randomMsg);
+        showToast(`נשלח גל חיבוקים ונשיקות ל${receiverName} ונרשם בצ'אט! 🥰❤️`);
       });
     }
   }
@@ -516,22 +543,78 @@
     if (typeof confetti === 'function') {
       confetti({
         particleCount: 100,
-        spread: 70,
+        spread: 75,
         origin: { y: 0.6 },
         colors: ['#c59b51', '#ff758c', '#ffd700', '#ff9a9e']
       });
     }
   }
 
-  // ROMANTIC QUOTES
+  // ROMANTIC QUOTES (EDITABLE & SHUFFLE)
   function setupQuote() {
-    setRandomQuote();
-    newQuoteBtn.addEventListener('click', setRandomQuote);
+    const savedQuote = localStorage.getItem('wedding_custom_quote');
+    if (savedQuote && savedQuote.trim()) {
+      displayQuote(savedQuote.trim());
+    } else {
+      setRandomQuote();
+    }
+
+    newQuoteBtn.addEventListener('click', () => {
+      setRandomQuote();
+      showToast('נבחר משפט חדש ממאגר האהבה ✨');
+    });
+
+    editQuoteBtn.addEventListener('click', openQuoteEditor);
+    cancelQuoteBtn.addEventListener('click', closeQuoteEditor);
+    saveQuoteBtn.addEventListener('click', saveCustomQuote);
+  }
+
+  function displayQuote(text) {
+    const cleanText = text.replace(/^[״"“]/, '').replace(/[״"”]$/, '').trim();
+    dailyLoveQuote.textContent = `״${cleanText}״`;
+  }
+
+  function getCleanCurrentQuote() {
+    return dailyLoveQuote.textContent.replace(/^[״"“]/, '').replace(/[״"”]$/, '').trim();
+  }
+
+  function openQuoteEditor() {
+    quoteEditText.value = getCleanCurrentQuote();
+    quoteDisplayArea.classList.add('hidden');
+    quoteActionsRow.classList.add('hidden');
+    quoteEditContainer.classList.remove('hidden');
+    quoteEditText.focus();
+    quoteEditText.select();
+  }
+
+  function closeQuoteEditor() {
+    quoteEditContainer.classList.add('hidden');
+    quoteDisplayArea.classList.remove('hidden');
+    quoteActionsRow.classList.remove('hidden');
+  }
+
+  function saveCustomQuote() {
+    const newText = quoteEditText.value.trim();
+    if (!newText) {
+      alert('נא להזין משפט או ציטוט.');
+      return;
+    }
+
+    localStorage.setItem('wedding_custom_quote', newText);
+    displayQuote(newText);
+    closeQuoteEditor();
+    showToast('המשפט עודכן בהצלחה! 💖');
   }
 
   function setRandomQuote() {
-    const randomIdx = Math.floor(Math.random() * quotes.length);
-    dailyLoveQuote.textContent = quotes[randomIdx];
+    const currentText = getCleanCurrentQuote();
+    const available = quotes.filter(q => q !== currentText);
+    const pool = available.length > 0 ? available : quotes;
+    const randomIdx = Math.floor(Math.random() * pool.length);
+    const selected = pool[randomIdx];
+
+    localStorage.setItem('wedding_custom_quote', selected);
+    displayQuote(selected);
   }
 
   // EVENTS / CALENDAR LOGIC
